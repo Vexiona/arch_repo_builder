@@ -23,6 +23,7 @@ impl Default for DepHash {
 pub(crate) enum Pkgbuild {
     Simple (String),
     Complex {
+        arch: String,
         url: String,
         branch: Option<String>,
         subtree: Option<String>,
@@ -35,6 +36,8 @@ pub(crate) enum Pkgbuild {
 
 #[derive(Debug, PartialEq, Deserialize)]
 pub(crate) struct Config {
+    #[serde(default = "default_arch")]
+    pub(crate) arch: String,
     #[serde(default)]
     pub(crate) holdpkg: bool,
     #[serde(default)]
@@ -62,6 +65,10 @@ pub(crate) struct Config {
     pub(crate) pkgbuilds: std::collections::HashMap<String, Pkgbuild>,
     #[serde(default = "default_home_binds")]
     pub(crate) homebinds: Vec<String>,
+}
+
+fn default_arch() -> String {
+    String::from("aarch64")
 }
 
 fn default_basepkgs() -> Vec<String> {
