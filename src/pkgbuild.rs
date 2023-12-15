@@ -427,7 +427,7 @@ impl PKGBUILD {
             .arg("--noextract")
             .arg("--nosign")
             .env("PKGDEST", &pkgdest)
-            .env("CARCH", self.arch);
+            .env("CARCH", self.arch.clone());
         actual_identity.set_root_chroot_drop_command(&mut command, chroot);
         command.env_remove("PATH");
         Ok(command)
@@ -553,7 +553,7 @@ impl PKGBUILDs {
         {
             match detail {
                 PkgbuildConfig::Simple(url) => PKGBUILD::new(
-                    None, name, url, &build_parent, &git_parent,
+                    name, name, url, &build_parent, &git_parent,
                     None, None, None, None,
                     None, home_binds_global
                 ),
