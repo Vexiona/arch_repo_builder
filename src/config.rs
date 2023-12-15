@@ -23,7 +23,6 @@ impl Default for DepHash {
 pub(crate) enum Pkgbuild {
     Simple (String),
     Complex {
-        arch: String,
         url: String,
         branch: Option<String>,
         subtree: Option<String>,

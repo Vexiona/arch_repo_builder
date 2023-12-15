@@ -62,7 +62,6 @@ enum Pkgver {
 
 #[derive(Clone)]
 pub(crate) struct PKGBUILD {
-    arch: String,
     pub(crate) base: String,
     branch: String,
     build: PathBuf,
@@ -125,10 +124,10 @@ impl PKGBUILD {
         None
     }
     fn new(
-        arch: &str, name: &str, url: &str, build_parent: &Path, 
-        git_parent: &Path, branch: Option<&str>, subtree: Option<&str>, 
-        deps: Option<&Vec<String>>, makedeps: Option<&Vec<String>>, 
-        home_binds: Option<&Vec<String>>, home_binds_global: &Vec<String>
+        name: &str, url: &str, build_parent: &Path, git_parent: &Path, 
+        branch: Option<&str>, subtree: Option<&str>, deps: Option<&Vec<String>>, 
+        makedeps: Option<&Vec<String>>, home_binds: Option<&Vec<String>>, 
+        home_binds_global: &Vec<String>
     ) -> Self
     {
         let url = if url == "AUR" {
@@ -149,7 +148,6 @@ impl PKGBUILD {
             url.to_string()
         };
         Self {
-            arch: arch.to_string(),
             base: name.to_string(),
             branch: match branch {
                 Some(branch) => branch.to_owned(),
@@ -403,6 +401,7 @@ impl PKGBUILD {
 
     pub(crate) fn get_build_command(
         &self,
+        arch: &str,
         actual_identity: &IdentityActual,
         temp_pkgdir: &Path
     )
@@ -427,7 +426,7 @@ impl PKGBUILD {
             .arg("--noextract")
             .arg("--nosign")
             .env("PKGDEST", &pkgdest)
-            .env("CARCH", self.arch.clone());
+            .env("CARCH", arch);
         actual_identity.set_root_chroot_drop_command(&mut command, chroot);
         command.env_remove("PATH");
         Ok(command)
@@ -553,16 +552,16 @@ impl PKGBUILDs {
         {
             match detail {
                 PkgbuildConfig::Simple(url) => PKGBUILD::new(
-                    name, name, url, &build_parent, &git_parent,
+                    name, url, &build_parent, &git_parent,
                     None, None, None, None,
                     None, home_binds_global
                 ),
-                PkgbuildConfig::Complex { arch, url, branch,
+                PkgbuildConfig::Complex { url, branch,
                     subtree, deps,
                     makedeps,
                     home_binds,binds: _
                 } => PKGBUILD::new(
-                    arch, name, url, &build_parent, &git_parent,
+                    name, url, &build_parent, &git_parent,
                     branch.as_deref(), subtree.as_deref(),
                     deps.as_ref(), makedeps.as_ref(), home_binds.as_ref(), home_binds_global)
             }

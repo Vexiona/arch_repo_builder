@@ -77,13 +77,13 @@ struct Builder<'a> {
 
 impl <'a> Builder<'a> {
     const BUILD_MAX_TRIES: usize = 3;
-    fn from_pkgbuild(pkgbuild: &'a PKGBUILD, actual_identity: &IdentityActual)
+    fn from_pkgbuild(pkgbuild: &'a PKGBUILD, arch: &'a str, actual_identity: &IdentityActual)
         -> Result<Self>
     {
         let builddir = BuildDir::new(&pkgbuild.base)?;
         let temp_pkgdir = pkgbuild.get_temp_pkgdir()?;
         let command = pkgbuild.get_build_command(
-            actual_identity, &temp_pkgdir)?;
+            arch, actual_identity, &temp_pkgdir)?;
         let build_state = if pkgbuild.extracted {
             BuildState::Extracted
         } else {
@@ -349,7 +349,7 @@ struct Builders<'a> {
 
 impl<'a> Builders<'a> {
     fn from_pkgbuilds(
-        pkgbuilds: &'a PKGBUILDs, actual_identity: &'a IdentityActual,
+        pkgbuilds: &'a PKGBUILDs, arch: &'a str, actual_identity: &'a IdentityActual,
         nonet: bool, sign: &'a str
     ) -> Result<Self>
     {
@@ -359,7 +359,7 @@ impl<'a> Builders<'a> {
             if ! pkgbuild.need_build {
                 continue
             }
-            match Builder::from_pkgbuild(pkgbuild, actual_identity) {
+            match Builder::from_pkgbuild(pkgbuild, arch, actual_identity) {
                 Ok(builder) => builders.push(builder),
                 Err(e) => {
                     log::error!("Failed to create builder for pkgbuild");
@@ -376,7 +376,7 @@ impl<'a> Builders<'a> {
     }
 
     fn from_pkgbuild_layer(
-        pkgbuild_layer: &Vec<&'a PKGBUILD>, actual_identity: &'a IdentityActual,
+        pkgbuild_layer: &Vec<&'a PKGBUILD>, arch: &'a str, actual_identity: &'a IdentityActual,
         nonet: bool, sign: &'a str
     ) -> Result<Self>
     {
@@ -386,7 +386,7 @@ impl<'a> Builders<'a> {
             if ! pkgbuild.need_build {
                 continue
             }
-            match Builder::from_pkgbuild(pkgbuild, actual_identity) {
+            match Builder::from_pkgbuild(pkgbuild, arch, actual_identity) {
                 Ok(builder) => builders.push(builder),
                 Err(e) => {
                     log::error!("Failed to create builder for pkgbuild: {}", e);
@@ -463,21 +463,21 @@ impl<'a> Builders<'a> {
 }
 
 pub(super) fn build_any_needed(
-    pkgbuilds: &PKGBUILDs,  actual_identity: &IdentityActual,
+    pkgbuilds: &PKGBUILDs,  arch: &str, actual_identity: &IdentityActual,
     nonet: bool, sign: &str
 ) -> Result<()>
 {
-    Builders::from_pkgbuilds(pkgbuilds, actual_identity, nonet, sign)?
+    Builders::from_pkgbuilds(pkgbuilds, arch, actual_identity, nonet, sign)?
         .work()?;
     Ok(())
 }
 
 pub(super) fn build_any_needed_layer(
-    pkgbuild_layer: &Vec<&PKGBUILD>,  actual_identity: &IdentityActual,
+    pkgbuild_layer: &Vec<&PKGBUILD>,  arch: &str, actual_identity: &IdentityActual,
     nonet: bool, sign: &str
 ) -> Result<()>
 {
-    Builders::from_pkgbuild_layer(pkgbuild_layer, actual_identity, nonet, sign)?
+    Builders::from_pkgbuild_layer(pkgbuild_layer, arch, actual_identity, nonet, sign)?
         .work()?;
     Ok(())
 }
