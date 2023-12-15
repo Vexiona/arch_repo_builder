@@ -160,7 +160,9 @@ pub(crate) trait CommonRoot {
                 .env("LANG", "C")
                 .arg("-Sy")
                 .arg("--root")
-                .arg(self.path_absolute()?),
+                .arg(self.path_absolute()?)
+                .arg("--config")
+                .arg("pacman.conf"),
             "refresh pacman DB").and(Ok(self))
     }
 
@@ -179,7 +181,9 @@ pub(crate) trait CommonRoot {
             .arg("--dbpath")
             .arg(self.db_path())
             .arg("--noconfirm")
-            .arg("--needed");
+            .arg("--needed")
+            .arg("--config")
+            .arg("pacman.conf");
         let mut has_pkg = false;
         for pkg in pkgs {
             has_pkg = true;

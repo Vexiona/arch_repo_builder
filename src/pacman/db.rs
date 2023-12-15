@@ -33,7 +33,7 @@ impl DbHandle {
             },
         };
         let content = match std::fs::read_to_string(
-            "/etc/pacman.conf")
+            "pacman.conf")
         {
             Ok(content) => content,
             Err(e) => {

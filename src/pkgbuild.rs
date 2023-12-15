@@ -423,9 +423,9 @@ impl PKGBUILD {
             .arg("--holdver")
             .arg("--nodeps")
             .arg("--noextract")
-            .arg("--ignorearch")
             .arg("--nosign")
-            .env("PKGDEST", &pkgdest);
+            .env("PKGDEST", &pkgdest)
+            .env("CARCH", "aarch64");
         actual_identity.set_root_chroot_drop_command(&mut command, chroot);
         command.env_remove("PATH");
         Ok(command)

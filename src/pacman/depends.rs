@@ -157,6 +157,8 @@ impl Depends {
                 .arg(dbpath.as_ref())
                 .arg("--noconfirm")
                 .arg("--downloadonly")
+                .arg("--config")
+                .arg("pacman.conf")
                 .args(deps)
             );
         if let Err(e) = output_and_check(&mut command,
