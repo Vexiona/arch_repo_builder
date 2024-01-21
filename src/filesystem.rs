@@ -202,19 +202,19 @@ pub(crate) fn remove_dir_allow_non_existing<P: AsRef<Path>>(path: P) -> Result<(
     Ok(())
 }
 
-pub(crate) fn remove_dirs_allow_non_existing<I, P>(dirs: I) -> Result<()> 
-where
-    I: IntoIterator<Item = P>,
-    P: AsRef<Path>
-{
-    let mut r = Ok(());
-    for dir in dirs {
-        if let Err(e) = remove_dir_allow_non_existing(dir) {
-            r = Err(e)
-        }
-    }
-    r
-}
+// pub(crate) fn remove_dirs_allow_non_existing<I, P>(dirs: I) -> Result<()> 
+// where
+//     I: IntoIterator<Item = P>,
+//     P: AsRef<Path>
+// {
+//     let mut r = Ok(());
+//     for dir in dirs {
+//         if let Err(e) = remove_dir_allow_non_existing(dir) {
+//             r = Err(e)
+//         }
+//     }
+//     r
+// }
 
 pub(crate) fn create_layout() -> Result<()> {
     create_dirs_allow_existing(["build", "logs", "pkgs", "sources"])?;
