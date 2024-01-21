@@ -62,6 +62,7 @@ enum Pkgver {
 
 #[derive(Clone)]
 pub(crate) struct PKGBUILD {
+    arch: String,
     pub(crate) base: String,
     branch: String,
     build: PathBuf,
@@ -127,7 +128,7 @@ impl PKGBUILD {
         name: &str, url: &str, build_parent: &Path, git_parent: &Path, 
         branch: Option<&str>, subtree: Option<&str>, deps: Option<&Vec<String>>, 
         makedeps: Option<&Vec<String>>, home_binds: Option<&Vec<String>>, 
-        home_binds_global: &Vec<String>
+        arch_global:&str, targetdir_global:&str, home_binds_global: &Vec<String>
     ) -> Self
     {
         let url = if url == "AUR" {
@@ -148,6 +149,7 @@ impl PKGBUILD {
             url.to_string()
         };
         Self {
+            arch: arch_global.to_string(),
             base: name.to_string(),
             branch: match branch {
                 Some(branch) => branch.to_owned(),
@@ -189,7 +191,7 @@ impl PKGBUILD {
             names: vec![],
             need_build: false,
             pkgid: String::new(),
-            pkgdir: PathBuf::from("pkgs"),
+            pkgdir: PathBuf::from("pkgs").join(targetdir_global),
             pkgver: Pkgver::Plain,
             provides: vec![],
             sources: vec![],
@@ -401,7 +403,6 @@ impl PKGBUILD {
 
     pub(crate) fn get_build_command(
         &self,
-        arch: &str,
         actual_identity: &IdentityActual,
         temp_pkgdir: &Path
     )
@@ -426,7 +427,7 @@ impl PKGBUILD {
             .arg("--noextract")
             .arg("--nosign")
             .env("PKGDEST", &pkgdest)
-            .env("CARCH", arch);
+            .env("CARCH", &self.arch);
         actual_identity.set_root_chroot_drop_command(&mut command, chroot);
         command.env_remove("PATH");
         Ok(command)
@@ -435,7 +436,9 @@ impl PKGBUILD {
     pub(crate) fn link_pkgs(&self) -> Result<()> {
         let mut rel = PathBuf::from("..");
         rel.push(&self.pkgid);
-        let updated = PathBuf::from("pkgs/updated");
+        let updated = self.pkgdir.parent().unwrap().join("updated");
+        crate::filesystem::remove_dir_allow_non_existing(&updated)?;
+        crate::filesystem::create_dir_allow_existing(&updated)?;
         // let mut bad = false;
         let readdir = match self.pkgdir.read_dir() {
             Ok(readdir) => readdir,
@@ -541,7 +544,8 @@ pub(crate) struct PKGBUILDs (pub(crate) Vec<PKGBUILD>);
 
 impl PKGBUILDs {
     pub(crate) fn from_config(
-        config: &HashMap<String, PkgbuildConfig>, home_binds_global: &Vec<String>
+        config: &HashMap<String, PkgbuildConfig>, arch_global: &String,
+        targetdir_global: &String, home_binds_global: &Vec<String>
     )
         -> Result<Self>
     {
@@ -554,7 +558,7 @@ impl PKGBUILDs {
                 PkgbuildConfig::Simple(url) => PKGBUILD::new(
                     name, url, &build_parent, &git_parent,
                     None, None, None, None,
-                    None, home_binds_global
+                    None, arch_global, targetdir_global, home_binds_global
                 ),
                 PkgbuildConfig::Complex { url, branch,
                     subtree, deps,
@@ -563,7 +567,8 @@ impl PKGBUILDs {
                 } => PKGBUILD::new(
                     name, url, &build_parent, &git_parent,
                     branch.as_deref(), subtree.as_deref(),
-                    deps.as_ref(), makedeps.as_ref(), home_binds.as_ref(), home_binds_global)
+                    deps.as_ref(), makedeps.as_ref(), home_binds.as_ref(),
+                    arch_global, targetdir_global, home_binds_global)
             }
         }).collect();
         pkgbuilds.sort_unstable_by(
@@ -607,11 +612,11 @@ impl PKGBUILDs {
 
     pub(crate) fn from_config_healthy(
         config: &HashMap<String, PkgbuildConfig>,
-        hold: bool, noclean: bool, proxy: Option<&Proxy>, gmr: Option<&Gmr>,
-        home_binds: &Vec<String>, terminal: bool
+        arch: &String, targetdir: &String, hold: bool, noclean: bool, proxy: Option<&Proxy>,
+        gmr: Option<&Gmr>, home_binds: &Vec<String>, terminal: bool
     ) -> Result<Self>
     {
-        let mut pkgbuilds = Self::from_config(config, home_binds)?;
+        let mut pkgbuilds = Self::from_config(config, arch, targetdir, home_binds)?;
         let update_pkg = if hold {
             if let Err(e) = pkgbuilds.healthy_set_commit() {
                 log::error!("Warning: holdpkg set, but PKGBUILDs unhealthy, \
@@ -1118,12 +1123,14 @@ impl PKGBUILDs {
         used.push(String::from("updated"));
         used.push(String::from("latest"));
         used.sort_unstable();
-        source::remove_unused("pkgs", &used);
+        source::remove_unused((self.0)[0].pkgdir.parent().unwrap(), &used);
     }
 
     pub(crate) fn link_pkgs(&self) {
+        let latest = (self.0)[0].pkgdir.parent().unwrap().join("latest");
+        let _ = crate::filesystem::remove_dir_allow_non_existing(&latest);
+        let _ = crate::filesystem::create_dir_allow_existing(&latest);
         let rel = PathBuf::from("..");
-        let latest = PathBuf::from("pkgs/latest");
         for pkgbuild in self.0.iter() {
             if ! pkgbuild.pkgdir.exists() {
                 continue;
@@ -1140,7 +1147,8 @@ impl PKGBUILDs {
             for entry in dirent {
                 if let Ok(entry) = entry {
                     let original = rel.join(entry.file_name());
-                    let link = latest.join(entry.file_name());
+                    let link = pkgbuild.pkgdir.parent().unwrap()
+                        .join("latest").join(entry.file_name());
                     if let Err(e) = symlink(&original, &link) {
                         log::error!("Failed to link '{}' => '{}': {}",
                             link.display(), original.display(), e);

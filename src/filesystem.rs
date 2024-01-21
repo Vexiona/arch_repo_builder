@@ -218,8 +218,8 @@ where
 
 pub(crate) fn create_layout() -> Result<()> {
     create_dirs_allow_existing(["build", "logs", "pkgs", "sources"])?;
-    remove_dirs_allow_non_existing(["pkgs/updated", "pkgs/latest"])?;
-    create_dirs_under_allow_existing(["updated", "latest"], "pkgs")?;
+    // remove_dirs_allow_non_existing(["pkgs/updated", "pkgs/latest"])?;
+    // create_dirs_under_allow_existing(["updated", "latest"], "pkgs")?;
     create_dirs_under_allow_existing([
         "file-ck", "file-md5", "file-sha1", "file-sha224", "file-sha256",
         "file-sha384", "file-sha512", "file-b2", "git", "PKGBUILD"], 

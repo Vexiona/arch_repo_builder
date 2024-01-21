@@ -67,6 +67,7 @@ struct Args {
 struct Settings {
     actual_identity: IdentityActual,
     arch: String,
+    targetdir: String,
     pkgbuilds_config: HashMap<String, Pkgbuild>,
     basepkgs: Vec<String>,
     proxy: Option<Proxy>,
@@ -114,6 +115,7 @@ impl Settings {
         Ok(Settings {
             actual_identity,
             arch: config.arch,
+            targetdir: config.tag,
             pkgbuilds_config: config.pkgbuilds,
             basepkgs: config.basepkgs,
             proxy,
@@ -135,8 +137,8 @@ impl Settings {
         crate::filesystem::create_layout()?;
         let mut pkgbuilds =
             crate::pkgbuild::PKGBUILDs::from_config_healthy(
-                &self.pkgbuilds_config, self.holdpkg,
-                self.noclean, self.proxy.as_ref(),
+                &self.pkgbuilds_config, &self.arch, &self.targetdir,
+                self.holdpkg, self.noclean, self.proxy.as_ref(),
                 self.gmr.as_ref(), &self.homebinds, self.terminal
             )?;
         let root = pkgbuilds.prepare_sources(
@@ -144,8 +146,7 @@ impl Settings {
             self.skipint, self.noclean, self.proxy.as_ref(),
             self.gmr.as_ref(), &self.dephash, self.terminal)?;
         let r = crate::build::maybe_build(&pkgbuilds,
-            root, &self.arch, &self.actual_identity, self.nobuild, self.nonet,
-            &self.sign);
+            root, &self.actual_identity, self.nobuild, self.nonet, &self.sign);
         let _ = std::fs::remove_dir("build");
         pkgbuilds.link_pkgs();
         if ! self.noclean {

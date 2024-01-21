@@ -37,6 +37,8 @@ pub(crate) enum Pkgbuild {
 pub(crate) struct Config {
     #[serde(default = "default_arch")]
     pub(crate) arch: String,
+    #[serde(default = "default_tag")]
+    pub(crate) tag: String,
     #[serde(default)]
     pub(crate) holdpkg: bool,
     #[serde(default)]
@@ -68,6 +70,10 @@ pub(crate) struct Config {
 
 fn default_arch() -> String {
     String::from("aarch64")
+}
+
+fn default_tag() -> String {
+    String::from("")
 }
 
 fn default_basepkgs() -> Vec<String> {
