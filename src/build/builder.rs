@@ -8,6 +8,8 @@ use std::{
         time::Duration
     };
 
+use procfs::Current;
+
 use crate::{
         build::dir::BuildDir,
         error::{
@@ -314,7 +316,7 @@ fn check_heavy_load(jobs: usize, cores: usize) -> bool {
     if jobs >= cores {
         return true
     }
-    if match procfs::CpuPressure::new() {
+    if match procfs::CpuPressure::current() {
         Ok(cpu_pressure) => {
             let some = cpu_pressure.some;
             some.avg10 > 10.00 || some.avg60 > 10.00 || some.avg300 > 10.00
@@ -326,7 +328,7 @@ fn check_heavy_load(jobs: usize, cores: usize) -> bool {
     } {
         return true
     }
-    match procfs::LoadAverage::new() {
+    match procfs::LoadAverage::current() {
         Ok(load_avg) => {
             let max_load = (cores + 2) as f32;
             load_avg.one >= max_load ||
@@ -404,7 +406,7 @@ impl<'a> Builders<'a> {
 
     fn work(&mut self)  -> Result<()>
     {
-        let cpuinfo = match procfs::CpuInfo::new() {
+        let cpuinfo = match procfs::CpuInfo::current() {
             Ok(cpuinfo) => cpuinfo,
             Err(e) => {
                 log::error!("Failed to get cpuinfo: {}", e);

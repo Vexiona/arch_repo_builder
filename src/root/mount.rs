@@ -55,7 +55,7 @@ impl MountedFolder {
                 },
             };
             exist = false;
-            for mountinfo in mountinfos.iter().rev() {
+            for mountinfo in mountinfos.into_iter().rev() {
                 if mountinfo.mount_point.starts_with(&absolute_path) {
                     if let Err(e) = nix::mount::umount(
                         &mountinfo.mount_point)
